@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Check if an argument is provided
+if [ -z "$1" ]; then
+  echo "Usage: $0 <percentage>"
+  echo "Example: $0 85"
+  exit 1
+fi
+
+PERCENTAGE=$1
+BATTERY_PATH="/sys/class/power_supply/BAT0/charge_control_end_threshold"
+
+# Validate the input is a number between 0 and 100
+if ! [[ "$PERCENTAGE" =~ ^[0-9]+$ ]] || [ "$PERCENTAGE" -lt 0 ] || [ "$PERCENTAGE" -gt 100 ]; then
+  echo "Error: Percentage must be a number between 0 and 100."
+  exit 1
+fi
+
+# Check if the battery path exists
+if [ ! -f "$BATTERY_PATH" ]; then
+  echo "Error: Battery charge threshold file not found at $BATTERY_PATH."
+  echo "Please ensure your system supports charge threshold control and BAT0 is the correct battery."
+  exit 1
+fi
+
+echo "Setting charge threshold to ${PERCENTAGE}%..."
+echo "$PERCENTAGE" | sudo tee "$BATTERY_PATH" > /dev/null
+
+if [ $? -eq 0 ]; then
+  echo "Charge threshold successfully set to ${PERCENTAGE}%."
+else
+  echo "Error: Failed to set charge threshold. You might need root privileges."
+fi
